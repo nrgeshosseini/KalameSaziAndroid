@@ -1,0 +1,10 @@
+<resources>
+    <style name="GameTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/primaryColor</item>
+        <item name="colorPrimaryDark">@color/primaryDarkColor</item>
+        <item name="colorAccent">@color/accentColor</item>
+        <item name="android:textColor">@color/textColor</item>
+        <item name="android:background">@color/backgroundColor</item>
+        <item name="android:windowBackground">@color/windowBackgroundColor</item>
+    </style>
+</resources>
