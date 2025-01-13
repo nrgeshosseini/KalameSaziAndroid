@@ -13,6 +13,9 @@
         android:theme="@style/Theme.KalameSazi"
         tools:targetApi="31">
         <activity
+            android:name=".GameActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainMenuActivity"
             android:exported="true">
             <intent-filter>
