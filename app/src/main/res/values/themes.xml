@@ -1,5 +1,5 @@
 <resources>
-    <style name="GameTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.KalameSazi" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/primaryColor</item>
         <item name="colorPrimaryDark">@color/primaryDarkColor</item>
         <item name="colorAccent">@color/accentColor</item>

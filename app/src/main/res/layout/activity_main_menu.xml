@@ -7,13 +7,13 @@
     tools:context=".MainMenuActivity">
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/strtButton"
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:text="شروع بازی"
         android:textSize="60sp"
         android:gravity="center"
-        android:fontFamily="@font/Shabnam"
+        android:fontFamily="@font/shabnam_bold"
         android:background="@drawable/start_button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
