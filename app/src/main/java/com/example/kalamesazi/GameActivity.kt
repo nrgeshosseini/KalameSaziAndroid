@@ -1,15 +1,16 @@
 package com.example.kalamesazi
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.view.animation.*
 import android.widget.Button
 import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.children
 
@@ -24,10 +25,6 @@ class GameActivity : AppCompatActivity() {
     private lateinit var dbHelper: WordsDbHelper
     private var wordToGuess: String = ""
 
-    companion object {
-        private const val TAG = "MainActivity"
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
@@ -38,7 +35,6 @@ class GameActivity : AppCompatActivity() {
         dbHelper = WordsDbHelper(this)
 
         loadGameState()
-
         loadWordForLevel(currentLevel)
         initializeCharacterButtons()
         initializeWordDisplay()
@@ -51,14 +47,13 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun loadWordForLevel(level: Int) {
-        Log.d(TAG, "Loading word for level: $level")
         wordToGuess = dbHelper.getWordForLevel(level) ?: "BOOK"
-        Log.d(TAG, "Word to guess: $wordToGuess")
-        glWordDisplay.columnCount = wordToGuess.length
+        if (wordToGuess.isNotEmpty()) {
+            glWordDisplay.columnCount = wordToGuess.length
+        }
     }
 
     private fun initializeCharacterButtons() {
-        Log.d(TAG, "Initializing character buttons")
         val characters = wordToGuess.toCharArray().toList().shuffled()
         glCharacterButtons.removeAllViews()
         characters.forEach { char ->
@@ -74,7 +69,6 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun initializeWordDisplay() {
-        Log.d(TAG, "Initializing word display")
         glWordDisplay.removeAllViews()
         for (i in wordToGuess.indices) {
             val textView = TextView(this)
@@ -89,11 +83,9 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun onCharacterSelected(button: Button) {
-        Log.d(TAG, "Character selected: ${button.text}")
         button.isEnabled = false
         currentGuess += button.text
 
-        // Animate button click
         val clickAnimation = AlphaAnimation(1.0f, 0.0f)
         clickAnimation.duration = 500
         button.startAnimation(clickAnimation)
@@ -102,17 +94,14 @@ class GameActivity : AppCompatActivity() {
 
         if (currentGuess.length == wordToGuess.length) {
             if (currentGuess == wordToGuess) {
-                Log.d(TAG, "Correct guess: $currentGuess")
                 winAnimation()
             } else {
-                Log.d(TAG, "Incorrect guess: $currentGuess")
                 loseLife()
             }
         }
     }
 
     private fun updateWordDisplay() {
-        Log.d(TAG, "Updating word display")
         for (i in wordToGuess.indices) {
             val textView = glWordDisplay.getChildAt(i) as TextView
             textView.text = if (i < currentGuess.length) currentGuess[i].toString() else "_"
@@ -120,25 +109,48 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun nextLevel() {
-        Log.d(TAG, "Moving to next level")
         currentLevel++
         currentGuess = ""
-        loadWordForLevel(currentLevel)
-        initializeCharacterButtons()
-        initializeWordDisplay()
-        updateWordDisplay()
 
-        val nextLevelAnimation = TranslateAnimation(0f, 0f, 0f, 1000f)
-        nextLevelAnimation.duration = 1000
-        glWordDisplay.startAnimation(nextLevelAnimation)
+        if (dbHelper.getWordForLevel(currentLevel) == null) {
+            showCompletionDialog()
+        } else {
+            loadWordForLevel(currentLevel)
+            initializeCharacterButtons()
+            initializeWordDisplay()
+            updateWordDisplay()
 
-        Handler().postDelayed({
-            glWordDisplay.clearAnimation()
-        }, 1000)
+            val nextLevelAnimation = TranslateAnimation(0f, 0f, 0f, 1000f)
+            nextLevelAnimation.duration = 1000
+            glWordDisplay.startAnimation(nextLevelAnimation)
+
+            Handler().postDelayed({
+                glWordDisplay.clearAnimation()
+            }, 1000)
+        }
+    }
+
+    private fun showCompletionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Congratulations!")
+            .setMessage("You've completed all the levels. Would you like to go to the main menu?")
+            .setPositiveButton("Ok") { _, _ ->
+                navigateToMainMenu()
+            }
+            .show()
+    }
+
+    private fun navigateToMainMenu() {
+        lives = 5
+        currentLevel = 1
+        currentGuess = ""
+
+        val intent = Intent(this, MainMenuActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     private fun loseLife() {
-        Log.d(TAG, "Losing a life. Lives left: ${lives - 1}")
         if (lives > 0) {
             lives--
             val lostLifeAnimation = AnimationUtils.loadAnimation(this, R.anim.heart_pulse)
@@ -150,13 +162,11 @@ class GameActivity : AppCompatActivity() {
             initializeCharacterButtons()
             updateWordDisplay()
         } else {
-            Log.d(TAG, "Game over")
             loseAnimation()
         }
     }
 
     private fun winAnimation() {
-        Log.d(TAG, "Playing win animation")
         val winAnimationSet = AnimationSet(true).apply {
             addAnimation(ScaleAnimation(1.0f, 2.0f, 1.0f, 2.0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f))
             addAnimation(RotateAnimation(0f, 360f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f))
@@ -170,20 +180,32 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun loseAnimation() {
-        Log.d(TAG, "Playing lose animation")
-        val loseAnimation = AnimationUtils.loadAnimation(this, R.anim.lose_animation)
-        glWordDisplay.children.forEach { view ->
-            if (view is TextView) {
-                view.text = "Game Over"
-            }
+        val loseAnimation = AnimationSet(true).apply {
+            addAnimation(ScaleAnimation(1.0f, 0.0f, 1.0f, 0.0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f))
+            addAnimation(AlphaAnimation(1.0f, 0.0f))
+            duration = 1000
         }
         glWordDisplay.startAnimation(loseAnimation)
 
         glCharacterButtons.children.forEach { it.isEnabled = false }
+
+        Handler().postDelayed({
+            resetGame()
+        }, 2000)
+    }
+
+    private fun resetGame() {
+        lives = 5
+        currentLevel = 1
+        currentGuess = ""
+
+        loadWordForLevel(currentLevel)
+        initializeCharacterButtons()
+        initializeWordDisplay()
+        updateWordDisplay()
     }
 
     private fun saveGameState() {
-        Log.d(TAG, "Saving game state. Lives: $lives, Level: $currentLevel")
         val sharedPreferences = getSharedPreferences("GamePreferences", Context.MODE_PRIVATE)
         with(sharedPreferences.edit()) {
             putInt("Lives", lives)
@@ -193,12 +215,9 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun loadGameState() {
-        Log.d(TAG, "Loading game state")
         val sharedPreferences = getSharedPreferences("GamePreferences", Context.MODE_PRIVATE)
         lives = sharedPreferences.getInt("Lives", 5)
         currentLevel = sharedPreferences.getInt("Level", 1)
-
-        Log.d(TAG, "Loaded game state. Lives: $lives, Level: $currentLevel")
 
         for (i in 0 until llLives.childCount) {
             llLives.getChildAt(i).visibility = if (i < lives) ImageView.VISIBLE else ImageView.GONE
